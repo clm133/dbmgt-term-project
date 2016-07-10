@@ -24,7 +24,7 @@ CREATE TABLE Friendships
 	CONSTRAINT friend1_FK_Users FOREIGN KEY (friend1) REFERENCES Users(userID),
 	CONSTRAINT friend2_FK_Users FOREIGN KEY (friend2) REFERENCES Users(userID),
 	CONSTRAINT Friendships_status_check CHECK (status BETWEEN 0 AND 1),
-  CONSTRAINT FRIENDSHIPS_COMP_KEY PRIMARY KEY (friend1, friend2)
+	CONSTRAINT FRIENDSHIPS_COMP_KEY PRIMARY KEY (friend1, friend2)
 );
 
 CREATE TABLE Groups
@@ -93,4 +93,4 @@ CREATE OR REPLACE FUNCTION group_limit_reached(gID NUMBER)
 	END;
 /
 	/*Actual Constraint*/
-ALTER TABLE Belongs_To ADD CONSTRAINT belongs_to_limit_reached CHECK(group_limit_reached(groupID) != 1);
+ALTER TABLE Belongs_To ADD CONSTRAINT belongs_to_limit_reached CHECK(group_limit_reached(groupID) <> 1);
