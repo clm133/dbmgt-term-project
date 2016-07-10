@@ -3,6 +3,7 @@ DROP TABLE Friendships CASCADE CONSTRAINTS;
 DROP TABLE Groups CASCADE CONSTRAINTS;
 DROP TABLE Messages CASCADE CONSTRAINTS;
 DROP TABLE Belongs_To CASCADE CONSTRAINTS;
+DROP TABLE RECIPIENTS CASCADE CONSTRAINTS;
 
 
 CREATE TABLE Users
@@ -21,8 +22,9 @@ CREATE TABLE Friendships
 	status	number(1), --this is the attribute for pending/approved represented as 0/1 respectively
 	established date,
 	CONSTRAINT friend1_FK_Users FOREIGN KEY (friend1) REFERENCES Users(userID),
-	CONSTRAINT friend2_FK_Users FOREIGN KEY (friend2) REFERENCES Users(userID).
-	CONSTRAINT Friendships_status_check CHECK (status BETWEEN 0 AND 1)
+	CONSTRAINT friend2_FK_Users FOREIGN KEY (friend2) REFERENCES Users(userID),
+	CONSTRAINT Friendships_status_check CHECK (status BETWEEN 0 AND 1),
+  CONSTRAINT FRIENDSHIPS_COMP_KEY PRIMARY KEY (friend1, friend2)
 );
 
 CREATE TABLE Groups
@@ -82,9 +84,9 @@ CREATE OR REPLACE FUNCTION group_limit_reached(gID NUMBER)
 		WHERE groupID = gID;
 		
 		IF total_membership = groupLimit
-			is_reached := 1; --1 indicates group limit reached
+			:is_reached := 1; --1 indicates group limit reached
 		ELSE
-			is_reached := 0; --indicates group limit is not reached
+			:is_reached := 0; --indicates group limit is not reached
 		END IF;
 		
 		RETURN(is_reached);
