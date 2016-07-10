@@ -23,15 +23,22 @@ DECLARE
 	belongsID number;
 	belongsML INTEGER;
 	belongsExists BOOLEAN;
-	
-	
+  
+  --messages/recipients variables
+  TYPE LIST_OF_IDS_TYPE IS TABLE OF USERS.USERID%TYPE;
+  list_of_ids LIST_OF_IDS_TYPE := LIST_OF_IDS_TYPE();
+	num_recipients INTEGER := 0;
+	v_sender USERS.USERID%TYPE;
+  v_recipient USERS.USERID%TYPE;
 BEGIN
 
   -- DELETE PREVIOUS ROWS
+  DELETE FROM RECIPIENTS;
+  DELETE FROM MESSAGES;
   DELETE FROM Belongs_To;
   DELETE FROM FRIENDSHIPS;
-  DELETE FROM USERS;
   DELETE FROM Groups;
+  DELETE FROM USERS;
 
   -- GENERATE RANDOM USERS
 	FOR i in 1..100 LOOP
@@ -114,6 +121,34 @@ BEGIN
 	END LOOP;
   END LOOP;
   
+  
+  --GENERATE 300 MESSAGES WITH RECIPIENTS
+  FOR i IN 1..300 LOOP
+    SELECT FLOOR(DBMS_RANDOM.VALUE(1,100)) INTO v_sender FROM DUAL;
+    SELECT FLOOR(DBMS_RANDOM.VALUE(1,5)) INTO num_recipients FROM DUAL;
+    list_of_ids.EXTEND;
+    FOR j IN 1..num_recipients LOOP
+      BEGIN
+      SELECT FLOOR(DBMS_RANDOM.VALUE(1, 100)) INTO v_recipient FROM DUAL;
+      EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+          v_recipient := v_sender;
+      END;
+      IF v_recipient = v_sender THEN CONTINUE;
+      END IF;
+      list_of_ids.EXTEND;
+      list_of_ids(list_of_ids.LAST) := v_recipient;
+    END LOOP;
+    
+    INSERT INTO MESSAGES VALUES(i, v_sender, 'subject' || i, 'content' || i, SYSDATE);
+    
+    FOR j IN 1..list_of_ids.COUNT LOOP
+      INSERT INTO RECIPIENTS SELECT i, list_of_ids(j) 
+      FROM DUAL WHERE list_of_ids(j) IS NOT NULL;
+    END LOOP;
+    
+    list_of_ids := LIST_OF_IDS_TYPE();
+  END LOOP;
   
   END;
 /
