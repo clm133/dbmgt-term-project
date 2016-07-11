@@ -92,7 +92,7 @@
 		RETURN(is_reached);
   END;
   /
- 
+ /*A trigger to enforce group membership is kept within limit*/
   CREATE OR REPLACE TRIGGER check_group_limit
 	BEFORE INSERT
 	ON Belongs_To
