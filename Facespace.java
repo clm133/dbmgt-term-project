@@ -91,7 +91,11 @@ public class Facespace {
                     fs.createUser(user, email, dob);
                     break;
                 case 2:
-                    initiateFriendship();
+                    System.out.println("Enter the first users userID: ");
+                    int user1 = input.nextInt();
+                    System.out.println("Enter the second users userID: ");
+                    int user2 = input.nextInt();
+                    fs.initiateFriendship(user1, user2);
                     break;
                 case 3:
                     establishFriendship();
@@ -187,7 +191,29 @@ public class Facespace {
         }
     }
 
-    public static void initiateFriendship() {
+    public void initiateFriendship(int user1, int user2) {
+
+        try {
+            String insertQuery = "INSERT INTO Friendships(friend1, friend2, status, established ) VALUES(?, ?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insertQuery);
+
+            preparedStatement.setInt(1, user1);
+            preparedStatement.setInt(2, user2);
+            preparedStatement.setInt(3, 0);
+            preparedStatement.setNull(4, java.sql.Types.DATE);
+            preparedStatement.executeUpdate();
+            System.out.println("Pending friendship successfully created!");
+
+        } catch (Exception e) {
+            System.out.println("Error adding group to database: "
+                    + e.toString());
+        } finally {
+            try {
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
 
     }
 
