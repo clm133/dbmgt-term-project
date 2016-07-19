@@ -51,6 +51,7 @@ public class Facespace {
 
         int quit = 0;
         while (quit == 0) {
+            System.out.print("\n");
             System.out.println("1. createUser");
             System.out.println("2. initiateFriendship");
             System.out.println("3. establishFriendship");
@@ -66,6 +67,7 @@ public class Facespace {
             System.out.println("13. topMessagers");
             System.out.println("14. dropUser");
             System.out.println("0. QUIT");
+            System.out.println("\nWhat is your choice?: ");
 
             int choice = input.nextInt();
 
@@ -74,9 +76,17 @@ public class Facespace {
                 choice = input.nextInt();
             }
 
+            input.nextLine();
             switch (choice) {
                 case 1:
-                    createUser();
+                    Facespace fs = new Facespace();
+                    System.out.println("Enter the users full name (First MI Last): ");
+                    String user = input.nextLine();
+                    System.out.println("Enter the users email: ");
+                    String email = input.nextLine();
+                    System.out.println("Enter the users date of birth (YYYY-MM-DD): ");
+                    String dob = input.nextLine();
+                    fs.createUser(user, email, dob);
                     break;
                 case 2:
                     initiateFriendship();
@@ -127,8 +137,46 @@ public class Facespace {
         }
     }
 
-    public static void createUser() {
+    public void createUser(String name, String email, String dob) {
 
+        try {
+            String[] names = name.split(" ");
+
+            statement = connection.createStatement();
+            query = "SELECT MAX(userID) FROM Users";
+            resultSet = statement.executeQuery(query);
+            resultSet.next();
+            long maxUsers = resultSet.getLong(1);
+
+            java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            java.sql.Date bday = new java.sql.Date(df.parse(dob).getTime());
+            Date now = new Date();
+            String date = df.format(now);
+            java.sql.Date login = new java.sql.Date(df.parse(date).getTime());
+
+            String insert = "INSERT INTO USERS(userID, fname, mname, lname, email, DOB, loggedIn) VALUES(?, ?, ?, ?, ?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insert);
+
+            preparedStatement.setLong(1, (maxUsers + 1));
+            preparedStatement.setString(2, names[0]);
+            preparedStatement.setString(3, names[1]);
+            preparedStatement.setString(4, names[2]);
+            preparedStatement.setString(5, email);
+            preparedStatement.setDate(6, bday);
+            preparedStatement.setDate(7, login);
+            preparedStatement.executeUpdate();
+            System.out.println("User successfully created!");
+        } catch (SQLException | ParseException e) {
+            System.out.println("Error adding user to database: "
+                    + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
     }
 
     public static void initiateFriendship() {
