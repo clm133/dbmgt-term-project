@@ -70,6 +70,7 @@ public class Facespace {
             System.out.println("\nWhat is your choice?: ");
 
             int choice = input.nextInt();
+            Facespace fs = new Facespace();
 
             while (choice < 0 || choice > 14) {
                 System.out.println("Please enter a valid choice!");
@@ -79,7 +80,6 @@ public class Facespace {
             input.nextLine();
             switch (choice) {
                 case 1:
-                    Facespace fs = new Facespace();
                     System.out.println("Enter the users full name (First MI Last): ");
                     String user = input.nextLine();
                     System.out.println("Enter the users email: ");
@@ -98,7 +98,13 @@ public class Facespace {
                     displayFriends();
                     break;
                 case 5:
-                    createGroup();
+                    System.out.println("Enter the group name: ");
+                    String group = input.nextLine();
+                    System.out.println("Enter the group description: ");
+                    String description = input.nextLine();
+                    System.out.println("Enter the group membership limit: ");
+                    String limit = input.nextLine();
+                    fs.createGroup(group, description, limit);
                     break;
                 case 6:
                     addToGroup();
@@ -154,7 +160,7 @@ public class Facespace {
             String date = df.format(now);
             java.sql.Date login = new java.sql.Date(df.parse(date).getTime());
 
-            String insert = "INSERT INTO USERS(userID, fname, mname, lname, email, DOB, loggedIn) VALUES(?, ?, ?, ?, ?, ?, ?)";
+            String insert = "INSERT INTO Users(userID, fname, mname, lname, email, DOB, loggedIn) VALUES(?, ?, ?, ?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(insert);
 
             preparedStatement.setLong(1, (maxUsers + 1));
@@ -191,7 +197,36 @@ public class Facespace {
 
     }
 
-    public static void createGroup() {
+    public void createGroup(String name, String description, String limit) {
+
+        try {
+            statement = connection.createStatement();
+            query = "SELECT MAX(groupID) FROM Groups";
+            resultSet = statement.executeQuery(query);
+            resultSet.next();
+            long maxGroups = resultSet.getLong(1);
+
+            String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insert);
+
+            preparedStatement.setLong(1, (maxGroups + 1));
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, Integer.parseInt(limit));
+            preparedStatement.setString(4, description);
+            preparedStatement.executeUpdate();
+            System.out.println("Group successfully created!");
+
+        } catch (SQLException | NumberFormatException e) {
+            System.out.println("Error adding group to database: "
+                    + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
 
     }
 
