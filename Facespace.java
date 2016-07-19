@@ -98,7 +98,11 @@ public class Facespace {
                     fs.initiateFriendship(user1, user2);
                     break;
                 case 3:
-                    establishFriendship();
+                    System.out.println("Enter the first friends userID: ");
+                    int friend1 = input.nextInt();
+                    System.out.println("Enter the second friends userID: ");
+                    int friend2 = input.nextInt();
+                    fs.establishFriendship(friend1, friend2);
                     break;
                 case 4:
                     displayFriends();
@@ -217,7 +221,24 @@ public class Facespace {
 
     }
 
-    public static void establishFriendship() {
+    public void establishFriendship(int friend1, int friend2) {
+        
+        try {
+            String update = "UPDATE Friendships SET status = 1, established = systimestamp WHERE ((friend1 = " + friend1 + " AND friend2 = " + friend2 + ") OR (friend2 = " + friend1 + " AND friend1 = " + friend2 + "))";
+            preparedStatement = connection.prepareStatement(update);
+            preparedStatement.executeUpdate();
+            System.out.println("Bilateral friendship created!");
+
+        } catch (Exception e) {
+            System.out.println("Error adding group to database: "
+                    + e.toString());
+        } finally {
+            try {
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
 
     }
 
