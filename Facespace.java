@@ -105,7 +105,9 @@ public class Facespace {
                     fs.establishFriendship(friend1, friend2);
                     break;
                 case 4:
-                    displayFriends();
+                    System.out.println("Enter the user name (First MI Last): ");
+                    String userfriend = input.nextLine();
+                    fs.displayFriends(userfriend);
                     break;
                 case 5:
                     System.out.println("Enter the group name: ");
@@ -242,7 +244,61 @@ public class Facespace {
 
     }
 
-    public static void displayFriends() {
+    public void displayFriends(String user) {
+        try {
+            String[] names = user.split(" ");
+            statement = connection.createStatement();
+            String select = "SELECT userID FROM Users WHERE fname = '" + names[0] + "' AND mname = '" + names[1] + "' AND lname = '" + names[2] + "'";
+            resultSet = statement.executeQuery(select);
+            resultSet.next();
+            if (resultSet.isAfterLast()) {
+                System.out.println("User does not exist!");
+            } else {
+
+                int userID = resultSet.getInt(1);
+
+                System.out.print("\n");
+                System.out.println("FRIENDSHIPS:");
+                System.out.print("---------------------------\n");
+
+                String column;
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend1 FROM Friendships WHERE friend2 = " + userID + ")";
+                resultSet = statement.executeQuery(select);
+
+                while (resultSet.next()) {
+                    column = resultSet.getString("fname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("mname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("lname");
+                    System.out.print(column);
+                }
+
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend2 FROM Friendships WHERE friend1 = " + userID + ")";
+                resultSet = statement.executeQuery(select);
+
+                while (resultSet.next()) {
+                    column = resultSet.getString("fname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("mname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("lname");
+                    System.out.print(column);
+                    System.out.print("\n");
+                }
+
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error displaying friends: "
+                    + e.toString());
+        } finally {
+            try {
+                statement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
 
     }
 
