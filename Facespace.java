@@ -188,7 +188,7 @@ public class Facespace {
             preparedStatement.setDate(7, login);
             preparedStatement.executeUpdate();
             System.out.println("User successfully created!");
-        } catch (SQLException | ParseException e) {
+        } catch (Exception e) {
             System.out.println("Error adding user to database: "
                 + e.toString());
         } finally {
@@ -325,7 +325,7 @@ public class Facespace {
             preparedStatement.executeUpdate();
             System.out.println("Group successfully created!");
 
-        } catch (SQLException | NumberFormatException e) {
+        } catch (Exception e) {
             System.out.println("Error adding group to database: "
                 + e.toString());
         } finally {
