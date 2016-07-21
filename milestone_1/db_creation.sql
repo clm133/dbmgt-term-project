@@ -31,7 +31,8 @@
   (
  	groupID number PRIMARY KEY,
  	name varchar2(32),
- 	memLimit number,
+ 	memLimit INTEGER,
+ 	memCount INTEGER,
  	description varchar2(100) --I set this to the same number of characters a message is constrained to
   );
  
@@ -61,12 +62,12 @@
  	CONSTRAINT Recipients_FK_Messages FOREIGN KEY (msgID) REFERENCES Messages(msgID),
  	CONSTRAINT Recipients_FK_Users FOREIGN KEY (recipient) REFERENCES Users(userID)
   );
-
 /* Lets set up some constraints! Go data integrity! */
 
 /* Check Group Membership Limit */
 
 	/*A function to check if group limit is reached*/
+	/*
   CREATE OR REPLACE FUNCTION group_limit_reached(gID NUMBER)
 	RETURN NUMBER
 	IS 
@@ -92,16 +93,42 @@
 		RETURN(is_reached);
   END;
   /
-  
+  */
  /*A trigger to enforce group membership is kept within limit*/
   CREATE OR REPLACE TRIGGER check_group_limit
 	BEFORE INSERT
 	ON Belongs_To
+	REFERENCING NEW AS NEW_ROW
 	FOR EACH ROW
+	DECLARE
+		v_limit INTEGER;
+		v_count INTEGER;
 	BEGIN
-		IF(group_limit_reached(:NEW.groupID) > 0) THEN ROLLBACK;
-			END IF;
+		SELECT memLimit INTO v_limit FROM Groups
+		WHERE GROUPID = :NEW_ROW.groupID;
+		SELECT memCount INTO v_count FROM Groups
+		WHERE GROUPID = :NEW_ROW.groupID;
+		IF v_count >= v_limit THEN ROLLBACK;
+		END IF;
 	END;
 	/
+
+	CREATE OR REPLACE TRIGGER UPDATE_MEM_COUNT
+		AFTER INSERT
+		ON Belongs_To
+		REFERENCING NEW AS NEW_ROW
+		FOR EACH ROW
+		DECLARE
+			v_count INTEGER;
+		BEGIN
+			SELECT MEMCOUNT INTO v_count FROM Groups
+			WHERE GROUPID = :NEW_ROW.groupID;
+
+			UPDATE GROUPS SET MEMCOUNT= v_count + 1
+			WHERE GROUPID = :NEW_ROW.groupID;
+		END;
+		/
+
+	commit;
   
  

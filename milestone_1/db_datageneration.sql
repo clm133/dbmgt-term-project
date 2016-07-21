@@ -95,7 +95,7 @@ BEGIN
 	gname := 'group' || i;
 	gdesc := gdesc || i || '. group number ' || i || ' is the best!';
 	SELECT FLOOR(DBMS_RANDOM.VALUE(1, 100)) INTO ml FROM DUAL; -- I kept the random number generator at 1-100 because I really like that there's a chance there will be a 1 person group and that makes me laugh
-	INSERT INTO Groups VALUES(i, gname, ml, gdesc);
+	INSERT INTO Groups VALUES(i, gname, ml, 0, gdesc);
   END LOOP;
   commit;
   
