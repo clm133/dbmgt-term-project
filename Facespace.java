@@ -1,4 +1,3 @@
-
 import java.sql.*;
 import java.text.ParseException;
 import java.util.Scanner;
@@ -82,52 +81,60 @@ public class Facespace {
             input.nextLine();
             switch (choice) {
                 case 1:
-                System.out.println("Enter the users full name (First MI Last): ");
-                String user = input.nextLine();
-                System.out.println("Enter the users email: ");
-                String email = input.nextLine();
-                System.out.println("Enter the users date of birth (YYYY-MM-DD): ");
-                String dob = input.nextLine();
-                fs.createUser(user, email, dob);
-                break;
+					System.out.println("Enter the users full name (First MI Last): ");
+					String user = input.nextLine();
+					System.out.println("Enter the users email: ");
+					String email = input.nextLine();
+					System.out.println("Enter the users date of birth (YYYY-MM-DD): ");
+					String dob = input.nextLine();
+					fs.createUser(user, email, dob);
+					break;
                 case 2:
-                System.out.println("Enter the first users userID: ");
-                int user1 = input.nextInt();
-                System.out.println("Enter the second users userID: ");
-                int user2 = input.nextInt();
-                fs.initiateFriendship(user1, user2);
-                break;
+					System.out.println("Enter the first users userID: ");
+					int user1 = input.nextInt();
+					System.out.println("Enter the second users userID: ");
+					int user2 = input.nextInt();
+					fs.initiateFriendship(user1, user2);
+					break;
                 case 3:
-                System.out.println("Enter the first friends userID: ");
-                int friend1 = input.nextInt();
-                System.out.println("Enter the second friends userID: ");
-                int friend2 = input.nextInt();
-                fs.establishFriendship(friend1, friend2);
-                break;
+					System.out.println("Enter the first friends userID: ");
+					int friend1 = input.nextInt();
+					System.out.println("Enter the second friends userID: ");
+					int friend2 = input.nextInt();
+					fs.establishFriendship(friend1, friend2);
+					break;
                 case 4:
-                System.out.println("Enter the user name (First MI Last): ");
-                String userfriend = input.nextLine();
-                fs.displayFriends(userfriend);
-                break;
+					System.out.println("Enter the user name (First MI Last): ");
+					String userfriend = input.nextLine();
+					fs.displayFriends(userfriend);
+					break;
                 case 5:
-                System.out.println("Enter the group name: ");
-                String group = input.nextLine();
-                System.out.println("Enter the group description: ");
-                String description = input.nextLine();
-                System.out.println("Enter the group membership limit: ");
-                String limit = input.nextLine();
-                fs.createGroup(group, description, limit);
-                break;
+					System.out.println("Enter the group name: ");
+					String group = input.nextLine();
+					System.out.println("Enter the group description: ");
+					String description = input.nextLine();
+					System.out.println("Enter the group membership limit: ");
+					String limit = input.nextLine();
+					fs.createGroup(group, description, limit);
+					break;
                 case 6:
-                System.out.println("Enter the group name: ");
-                group = input.nextLine();
-                System.out.println("Enter the userID to be added to the group: ");
-                user1 = input.nextInt();
-                fs.addToGroup(group, user1);
-                break;
+					System.out.println("Enter the group name: ");
+					group = input.nextLine();
+					System.out.println("Enter the userID to be added to the group: ");
+					user1 = input.nextInt();
+					fs.addToGroup(group, user1);
+					break;
                 case 7:
-                sendMessageToUser();
-                break;
+					System.out.println("Enter message subject: ");
+					String subject = input.nextLine();
+					System.out.println("Enter message body: ");
+					String body = input.nextLine();
+					System.out.println("Enter recipient userID: ");
+					int recipient = input.nextInt();
+					System.out.println("Enter sender userID: ");
+					int sender = input.nextInt();
+					fs.sendMessageToUser(subject, body, recipient, sender);
+					break;
                 case 8:
                 sendMessageToGroup();
                 break;
@@ -377,13 +384,50 @@ public class Facespace {
         } finally {
             closeResources();
         }
-
-
     }
 
+    public void sendMessageToUser(String subj, String body, int recipient, int sender) {
+		try {
+			
+			//For generating new messageID
+			statement = connection.createStatement();
+            query = "SELECT MAX(msgID) FROM Messages";
+            resultSet = statement.executeQuery(query);
+            resultSet.next();
+            long totalMessages = resultSet.getLong(1);
+			
+			//For generating date
+			java.sql.Date dateSent = new java.sql.Date(new java.util.Date().getTime());
+			
+            String insert = "INSERT INTO Messages(msgID, sender, subject, content, dateSent) VALUES(?, ?, ?, ?, ?)";
+            preparedStatement = connection.prepareStatement(insert);
 
-    public static void sendMessageToUser() {
-
+            preparedStatement.setLong(1, (totalMessages + 1));
+            preparedStatement.setLong(2, sender);
+            preparedStatement.setString(3, subj);
+			preparedStatement.setString(4, body);
+			preparedStatement.setDate(5, dateSent);
+            preparedStatement.executeUpdate();
+			preparedStatement.close();
+			
+			insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
+			preparedStatement = connection.prepareStatement(insert);
+			preparedStatement.setLong(1, (totalMessages + 1));
+            preparedStatement.setLong(2, recipient);
+            System.out.println("Message sent successfully!");
+			preparedStatement.close();
+        } 
+		catch (Exception e) {
+            System.out.println("Error inserting message into database: "
+                + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
     }
 
     public static void sendMessageToGroup() {
