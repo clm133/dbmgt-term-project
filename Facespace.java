@@ -2,6 +2,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.util.Scanner;
 import java.util.Date;
+import java.util.ArrayList;
 
 public class Facespace {
 
@@ -136,11 +137,21 @@ public class Facespace {
 					fs.sendMessageToUser(subject, body, recipient, sender);
 					break;
                 case 8:
-                sendMessageToGroup();
-                break;
+					System.out.println("Enter message subject: ");
+					subject = input.nextLine();
+					System.out.println("Enter message body: ");
+					body = input.nextLine();
+					System.out.println("Enter groupID: ");
+					int gid = input.nextInt();
+					System.out.println("Enter sender userID: ");
+					sender = input.nextInt();
+					fs.sendMessageToGroup(subject, body, gid, sender);
+					break;
                 case 9:
-                displayMessages();
-                break;
+					System.out.println("Enter userID: ");
+					int uid = input.nextInt();
+					fs.displayMessages(uid);
+					break;
                 case 10:
                 displayNewMessages();
                 break;
@@ -430,12 +441,106 @@ public class Facespace {
         }
     }
 
-    public static void sendMessageToGroup() {
-
+    public void sendMessageToGroup(String subj, String body, int gid, int sender){
+		try {
+			//Generate a new messageID
+			statement = connection.createStatement();
+            query = "SELECT MAX(msgID) FROM Messages";
+            resultSet = statement.executeQuery(query);
+            resultSet.next();
+            long totalMessages = resultSet.getLong(1) + 1;
+			
+			//Generate a list of all recipients
+			statement = connection.createStatement();
+            query = "SELECT member FROM Belongs_To WHERE groupID = ?";
+			preparedStatement = connection.prepareStatement(query);
+			preparedStatement.setInt(1, gid);
+            resultSet = statement.executeQuery(query);
+			ArrayList<Long> groupMembers = new ArrayList<Long>();
+			while(resultSet.next()){
+				groupMembers.add(resultSet.getLong("member"));
+			}
+			preparedStatement.close();
+			
+			//generate dateSent
+			java.sql.Date dateSent = new java.sql.Date(new java.util.Date().getTime());
+			
+			//Add message to Messages
+			String insert = "INSERT INTO Messages(msgID, sender, subject, content, dateSent) VALUES(?, ?, ?, ?, ?)";
+			preparedStatement = connection.prepareStatement(insert);
+			preparedStatement.setLong(1, totalMessages);
+			preparedStatement.setLong(2, sender);
+			preparedStatement.setString(3, subj);
+			preparedStatement.setString(4, body);
+			preparedStatement.setDate(5, dateSent);
+			preparedStatement.executeUpdate();
+			preparedStatement.close();
+			
+			/* Loop through list of group members to make inserts in Recipients for each recipient*/
+			for(int i = 0; i < groupMembers.size(); i++){
+				
+				insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
+				preparedStatement = connection.prepareStatement(insert);
+				preparedStatement.setLong(1, totalMessages);
+				preparedStatement.setLong(2, groupMembers.get(i));
+				preparedStatement.close();
+			}
+			
+			System.out.println("Message to group sent successfully!");
+        } 
+		catch (Exception e) {
+            System.out.println("Error inserting message into database: "
+                + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
     }
 
-    public static void displayMessages() {
-
+    public void displayMessages(int user) {
+		try {
+			
+			//Generate a list of all messages
+			statement = connection.createStatement();
+            query = "SELECT * FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ?";
+			preparedStatement = connection.prepareStatement(query);
+			preparedStatement.setInt(1, user);
+            resultSet = statement.executeQuery(query);
+			
+			//Save those messages in a list
+			ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
+			int from;
+			String s;
+			String b;
+			Date d;
+			int mid;
+			DBMessage m;
+			while(resultSet.next()){
+				from = resultSet.getInt("sender");
+				s = resultSet.getString("subject");
+				b = resultSet.getString("content");
+				d = resultSet.getDate("dateSent");
+				mid = resultSet.getInt("msgID");
+				m = new DBMessage(from, s, b, d, mid);
+				messageList.add(m);
+			}
+			preparedStatement.close();
+        } 
+		catch (Exception e) {
+            System.out.println("Error finding messages: "
+                + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
     }
 
     public static void displayNewMessages() {
@@ -473,5 +578,23 @@ public class Facespace {
             System.out.println("Error when closing resources: " + e.toString());
         }
     }
+	
+	private class DBMessage
+	{
+		public int senderID;
+		public String subject;
+		public String body;
+		public Date dateSent;
+		public int messageID;
+		
+		//Constructor
+		public DBMessage(int sid, String s, String b, Date d, int mid)
+		{
+			senderID = sid;
+			subject = s;
+			body = b;
+			dateSent = d;
+		}
+	}
 
 }
