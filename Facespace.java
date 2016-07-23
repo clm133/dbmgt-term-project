@@ -166,7 +166,11 @@ public class Facespace {
                     fs.searchForUser(searchKey);
                     break;
                 case 12:
-                    threeDegrees();
+					System.out.println("Enter userID of UserA: ");
+					int usera = input.nextInt();
+					System.out.println("Enter userID of UserB: ");
+					int userb = input.nextInt();
+                    fs.threeDegrees(usera, userb);
                     break;
                 case 13:
                     System.out.println("Find k users who have sent the most messages in the last x months");
@@ -515,14 +519,12 @@ public class Facespace {
 
     public void displayMessages(int user) {
         try {
-
             //Generate a list of all messages
-            statement = connection.createStatement();
-            query = "SELECT * FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ?";
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, user);
-            resultSet = statement.executeQuery(query);
-
+            query = "SELECT Messages.sender, Messages.subject, Messages.content, Messages.dateSent, Messages.msgID FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ?";
+			preparedStatement = connection.prepareStatement(query);
+			preparedStatement.setInt(1, user);
+            resultSet = preparedStatement.executeQuery();
+			
             //Save those messages in a list
             ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
             int from;
@@ -531,28 +533,29 @@ public class Facespace {
             Date d;
             int mid;
             DBMessage m;
+			
             while(resultSet.next()){
+				System.out.println("Message Found");
                 from = resultSet.getInt("sender");
                 s = resultSet.getString("subject");
                 b = resultSet.getString("content");
                 d = resultSet.getDate("dateSent");
                 mid = resultSet.getInt("msgID");
                 m = new DBMessage(from, s, b, d, mid);
+				System.out.println("Message id = " + m.messageID);
                 messageList.add(m);
             }
             preparedStatement.close();
-			
 			//print out that list
 			System.out.println("\nMessages");
             System.out.println("---------------------------\n");
 			for(int i = 0; i < messageList.size(); i++){
 				m = messageList.get(i);
 				//Get the first, middle, last name of sender
-				statement = connection.createStatement();
 				query = "SELECT * FROM Users WHERE userID = ?";
 				preparedStatement = connection.prepareStatement(query);
 				preparedStatement.setInt(1, m.senderID);
-				resultSet = statement.executeQuery(query);
+				resultSet = preparedStatement.executeQuery();
 				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
 				//print everything out
 				System.out.println("From: " + fullname);
@@ -567,24 +570,16 @@ public class Facespace {
         catch (Exception e) {
             System.out.println("Error finding messages: "
                     + e.toString());
-        } finally {
-            try {
-                statement.close();
-                preparedStatement.close();
-            } catch (Exception e) {
-                System.out.println("Cannot close statement: " + e.toString());
-            }
         }
     }
 
     public void displayNewMessages(int user) {
 		try {
             //Generate a list of all messages 
-            statement = connection.createStatement();
             query = "SELECT * FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ? AND CAST(dateSent AS TIMESTAMP) > (SELECT loggedIn FROM Users WHERE userID = ?)";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, user);
-            resultSet = statement.executeQuery(query);
+            resultSet = preparedStatement.executeQuery();
 
             //Save those messages in a list
             ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
@@ -611,11 +606,10 @@ public class Facespace {
 			for(int i = 0; i < messageList.size(); i++){
 				m = messageList.get(i);
 				//Get the first, middle, last name of sender
-				statement = connection.createStatement();
 				query = "SELECT * FROM Users WHERE userID = ?";
 				preparedStatement = connection.prepareStatement(query);
 				preparedStatement.setInt(1, m.senderID);
-				resultSet = statement.executeQuery(query);
+				resultSet = preparedStatement.executeQuery();
 				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
 				//print everything out
 				System.out.println("From: " + fullname);
@@ -685,9 +679,23 @@ public class Facespace {
         }
     }
 
-    public static void threeDegrees() {
-		
-    }
+    public void threeDegrees(int usera, int userb) {
+		 try {
+            query = "SELECT friend2, LTRIM(SYS_CONNECT_BY_PATH(friend2, '-'), '-') AS path FROM Friendships WHERE friend2 = ? START WITH friend1 = ? CONNECT BY NOCYCLE PRIOR friend2 = friend1 AND LEVEL <=3";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(2, usera);
+			preparedStatement.setInt(1, userb);
+            resultSet = preparedStatement.executeQuery();
+			System.out.println("Paths Between " + usera + " and " + userb);
+            while(resultSet.next()) {
+				System.out.println("" + usera + "-" + resultSet.getString("path"));
+            }
+        } catch(Exception e) {
+            System.out.println("There was an error finding a path between users: " + e.toString());
+        } finally {
+            closeResources();
+        }
+	}
 
     /*
      * Display the top k who have sent the most messages in the past x months
@@ -746,6 +754,7 @@ public class Facespace {
             subject = s;
             body = b;
             dateSent = d;
+			messageID = mid;
         }
     }
 
