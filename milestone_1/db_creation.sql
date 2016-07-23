@@ -54,7 +54,7 @@
  	dateSent date,
  	CONSTRAINT Messaages_Sender_FK_Users FOREIGN KEY (sender) REFERENCES Users(userID)
   );
- 
+
   CREATE TABLE Recipients
   (
  	msgID number,
@@ -62,39 +62,10 @@
  	CONSTRAINT Recipients_FK_Messages FOREIGN KEY (msgID) REFERENCES Messages(msgID),
  	CONSTRAINT Recipients_FK_Users FOREIGN KEY (recipient) REFERENCES Users(userID)
   );
-/* Lets set up some constraints! Go data integrity! */
 
-/* Check Group Membership Limit */
+--Check Group Membership Limit 
 
-	/*A function to check if group limit is reached*/
-	/*
-  CREATE OR REPLACE FUNCTION group_limit_reached(gID NUMBER)
-	RETURN NUMBER
-	IS 
-		total_membership NUMBER;
-		group_limit NUMBER;
-		is_reached NUMBER;
-		
-	BEGIN
-		SELECT COUNT(*)
-		INTO total_membership
-		FROM Belongs_To
-		WHERE groupID = gID;
-		
-		SELECT memLimit
-		INTO group_limit
-	FROM Groups
-	WHERE groupID = gID;
-		
-	IF total_membership < group_limit THEN is_reached := 0; --1 indicates group limit is not reached
-		ELSE is_reached := 1; --indicates group limit is reached
-		END IF;
-		
-		RETURN(is_reached);
-  END;
-  /
-  */
- /*A trigger to enforce group membership is kept within limit*/
+--A trigger to enforce group membership is kept within limit
   CREATE OR REPLACE TRIGGER check_group_limit
 	BEFORE INSERT
 	ON Belongs_To
