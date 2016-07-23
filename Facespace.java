@@ -415,32 +415,37 @@ public class Facespace {
 
     public void sendMessageToUser(String subj, String body, int recipient, int sender) {
         try {
-
+			
             //For generating new messageID
-            statement = connection.createStatement();
+			int totalMessages;
+			statement = connection.createStatement();
             query = "SELECT MAX(msgID) FROM Messages";
             resultSet = statement.executeQuery(query);
             resultSet.next();
-            long totalMessages = resultSet.getLong(1);
-
+			totalMessages = resultSet.getInt(1);
+			statement.close();
+			
             //For generating date
             java.sql.Date dateSent = new java.sql.Date(new java.util.Date().getTime());
 
+			
             String insert = "INSERT INTO Messages(msgID, sender, subject, content, dateSent) VALUES(?, ?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(insert);
 
-            preparedStatement.setLong(1, (totalMessages + 1));
-            preparedStatement.setLong(2, sender);
+            preparedStatement.setInt(1, (totalMessages + 1));
+            preparedStatement.setInt(2, sender);
             preparedStatement.setString(3, subj);
             preparedStatement.setString(4, body);
             preparedStatement.setDate(5, dateSent);
             preparedStatement.executeUpdate();
             preparedStatement.close();
-
+			
             insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
             preparedStatement = connection.prepareStatement(insert);
-            preparedStatement.setLong(1, (totalMessages + 1));
-            preparedStatement.setLong(2, recipient);
+            preparedStatement.setInt(1, (totalMessages + 1));
+            preparedStatement.setInt(2, recipient);
+			preparedStatement.executeUpdate();
+			
             System.out.println("Message sent successfully!");
             preparedStatement.close();
         } 
@@ -524,7 +529,6 @@ public class Facespace {
 			preparedStatement = connection.prepareStatement(query);
 			preparedStatement.setInt(1, user);
             resultSet = preparedStatement.executeQuery();
-			
             //Save those messages in a list
             ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
             int from;
@@ -580,7 +584,7 @@ public class Facespace {
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, user);
             resultSet = preparedStatement.executeQuery();
-
+			
             //Save those messages in a list
             ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
             int from;
