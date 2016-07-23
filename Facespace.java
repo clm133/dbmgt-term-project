@@ -13,11 +13,14 @@ public class Facespace {
     private ResultSet resultSet;
 
     public static void main(String[] args) throws SQLException {
-
+		Scanner input;
         String username, password;
 
-        username = "wrk10";
-        password = "3718569";
+        input = new Scanner(System.in);
+		System.out.print("Enter username(pitt ID): ");
+        username = input.nextLine();
+		System.out.print("Enter password(peoplesoft ID): ");
+        password = input.nextLine();
 
         try {
             //register driver
@@ -683,7 +686,7 @@ public class Facespace {
     }
 
     public static void threeDegrees() {
-
+		
     }
 
     /*
