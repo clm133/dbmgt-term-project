@@ -153,7 +153,9 @@ public class Facespace {
                     fs.displayMessages(uid);
                     break;
                 case 10:
-                    displayNewMessages();
+					System.out.println("Enter userID: ");
+                    uid = input.nextInt();
+                    fs.displayNewMessages(uid);
                     break;
                 case 11:
                     System.out.println("Enter string to search for user: ");
@@ -536,6 +538,28 @@ public class Facespace {
                 messageList.add(m);
             }
             preparedStatement.close();
+			
+			//print out that list
+			System.out.println("\nMessages");
+            System.out.println("---------------------------\n");
+			for(int i = 0; i < messageList.size(); i++){
+				m = messageList.get(i);
+				//Get the first, middle, last name of sender
+				statement = connection.createStatement();
+				query = "SELECT * FROM Users WHERE userID = ?";
+				preparedStatement = connection.prepareStatement(query);
+				preparedStatement.setInt(1, m.senderID);
+				resultSet = statement.executeQuery(query);
+				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
+				//print everything out
+				System.out.println("From: " + fullname);
+				System.out.println("Subject: " + m.subject);
+				System.out.println("Sent: " + m.dateSent.toString());
+				System.out.println("Body: ");
+				System.out.println(m.body);
+				System.out.println("---------------------------\n");
+				preparedStatement.close();
+			}
         } 
         catch (Exception e) {
             System.out.println("Error finding messages: "
@@ -550,8 +574,67 @@ public class Facespace {
         }
     }
 
-    public static void displayNewMessages() {
+    public void displayNewMessages(int user) {
+		try {
+            //Generate a list of all messages 
+            statement = connection.createStatement();
+            query = "SELECT * FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ? AND CAST(dateSent AS TIMESTAMP) > (SELECT loggedIn FROM Users WHERE userID = ?)";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, user);
+            resultSet = statement.executeQuery(query);
 
+            //Save those messages in a list
+            ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
+            int from;
+            String s;
+            String b;
+            Date d;
+            int mid;
+            DBMessage m;
+            while(resultSet.next()){
+                from = resultSet.getInt("sender");
+                s = resultSet.getString("subject");
+                b = resultSet.getString("content");
+                d = resultSet.getDate("dateSent");
+                mid = resultSet.getInt("msgID");
+                m = new DBMessage(from, s, b, d, mid);
+                messageList.add(m);
+            }
+            preparedStatement.close();
+			
+			//print out that list
+			System.out.println("\nMessages");
+            System.out.println("---------------------------\n");
+			for(int i = 0; i < messageList.size(); i++){
+				m = messageList.get(i);
+				//Get the first, middle, last name of sender
+				statement = connection.createStatement();
+				query = "SELECT * FROM Users WHERE userID = ?";
+				preparedStatement = connection.prepareStatement(query);
+				preparedStatement.setInt(1, m.senderID);
+				resultSet = statement.executeQuery(query);
+				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
+				//print everything out
+				System.out.println("From: " + fullname);
+				System.out.println("Subject: " + m.subject);
+				System.out.println("Sent: " + m.dateSent.toString());
+				System.out.println("Body: ");
+				System.out.println(m.body);
+				System.out.println("---------------------------\n");
+				preparedStatement.close();
+			}
+        } 
+        catch (Exception e) {
+            System.out.println("Error finding messages: "
+                    + e.toString());
+        } finally {
+            try {
+                statement.close();
+                preparedStatement.close();
+            } catch (Exception e) {
+                System.out.println("Cannot close statement: " + e.toString());
+            }
+        }
     }
 
     /*
