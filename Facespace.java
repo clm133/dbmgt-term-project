@@ -156,13 +156,20 @@ public class Facespace {
                     displayNewMessages();
                     break;
                 case 11:
-                    searchForUser();
+                    System.out.println("Enter string to search for user: ");
+                    String searchKey = input.nextLine();
+                    fs.searchForUser(searchKey);
                     break;
                 case 12:
                     threeDegrees();
                     break;
                 case 13:
-                    topMessagers();
+                    System.out.println("Find k users who have sent the most messages in the last x months");
+                    System.out.println("Enter k: ");
+                    int k = input.nextInt();
+                    System.out.println("Enter x: ");
+                    int x = input.nextInt();
+                    fs.topMessagers(k, x);
                     break;
                 case 14:
                     dropUser();
@@ -547,15 +554,74 @@ public class Facespace {
 
     }
 
-    public static void searchForUser() {
+    /*
+     *Takes a space delimited string and searches all possible users with that string in any field
+     */
+    public void searchForUser(String key) {
+        try {
+            if(key == null) {
+                System.out.println("Your search key was null");
+                return;
+            }
+            query = "SELECT FNAME, MNAME, LNAME FROM USERS WHERE ";
+            StringBuilder builder = new StringBuilder();
+            builder.append(query);
+            String[] keys = key.split("\\s+");
+            if(keys.length >= 100) {
+                System.out.println("You have entered too many keys at once");
+                return;
+            }
+            for(int i=0; i<keys.length;i++) {
+                if(i > 0) {
+                    builder.append(" OR ");
+                }
+                builder.append("FNAME LIKE '%' || ? || '%' OR MNAME LIKE '%' || ? || '%' OR LNAME LIKE '%' || ? || '%' ");
+            }
+            builder.append(" ORDER BY FNAME, MNAME, LNAME ASC");
+            preparedStatement = connection.prepareStatement(builder.toString());
+            int ind = 0;
+            for(int i=0; i<keys.length; i++) {
+                preparedStatement.setString(ind++, keys[i]);
+                preparedStatement.setString(ind++, keys[i]);
+                preparedStatement.setString(ind++, keys[i]);
+            }
 
+            resultSet = preparedStatement.executeQuery();
+            System.out.println("Users:");
+            while(resultSet.next()) {
+                System.out.println(resultSet.getString(1) + " " + resultSet.getString(2) + " " + resultSet.getString(3));
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.out.println("Error when searching for user: " + e.toString());
+        } finally {
+            closeResources();
+        }
     }
 
     public static void threeDegrees() {
 
     }
 
-    public static void topMessagers() {
+    /*
+     * Display the top k who have sent the most messages in the past x months
+     */
+    public void topMessagers(int k, int x) {
+        try {
+            query = "SELECT USERID, FNAME, MNAME, LNAME, COUNT(USERID) MSGCOUNT FROM USERS T1 JOIN MESSAGES T2 ON T1.USERID = T2.SENDER WHERE T2.DATESENT >= SYSDATE - INTERVAL ? MONTH GROUP BY USERID, FNAME, MNAME, LNAME ORDER BY MSGCOUNT DESC";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, Integer.toString(x));
+            resultSet = preparedStatement.executeQuery();
+            int count = 0;
+            System.out.println("FNAME\tMNAME\tLNAME\tMSGCOUNT");
+            while(resultSet.next() && count++ < k) {
+                System.out.println(resultSet.getString(1) + "\t" + resultSet.getString(2) + "\t" + resultSet.getString(3) + "\t" + resultSet.getInt(4));
+            }
+        } catch(Exception e) {
+            System.out.println("There was an error getting the top messengers: " + e.toString());
+        } finally {
+            closeResources();
+        }
 
     }
 
