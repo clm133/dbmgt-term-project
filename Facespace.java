@@ -428,7 +428,7 @@ public class Facespace {
             //For generating date
             java.sql.Date dateSent = new java.sql.Date(new java.util.Date().getTime());
 
-			
+			//Insert message
             String insert = "INSERT INTO Messages(msgID, sender, subject, content, dateSent) VALUES(?, ?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(insert);
 
@@ -440,6 +440,7 @@ public class Facespace {
             preparedStatement.executeUpdate();
             preparedStatement.close();
 			
+			//insert Recipients
             insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
             preparedStatement = connection.prepareStatement(insert);
             preparedStatement.setInt(1, (totalMessages + 1));
@@ -464,33 +465,35 @@ public class Facespace {
 
     public void sendMessageToGroup(String subj, String body, int gid, int sender){
         try {
-            //Generate a new messageID
-            statement = connection.createStatement();
+             //For generating new messageID
+			int totalMessages;
+			statement = connection.createStatement();
             query = "SELECT MAX(msgID) FROM Messages";
             resultSet = statement.executeQuery(query);
             resultSet.next();
-            long totalMessages = resultSet.getLong(1) + 1;
+			totalMessages = resultSet.getInt(1);
+			statement.close();
 
             //Generate a list of all recipients
-            statement = connection.createStatement();
             query = "SELECT member FROM Belongs_To WHERE groupID = ?";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, gid);
-            resultSet = statement.executeQuery(query);
-            ArrayList<Long> groupMembers = new ArrayList<Long>();
+            resultSet = preparedStatement.executeQuery();
+            ArrayList<Integer> groupMembers = new ArrayList<Integer>();
             while(resultSet.next()){
-                groupMembers.add(resultSet.getLong("member"));
+                groupMembers.add(resultSet.getInt("member"));
             }
             preparedStatement.close();
 
             //generate dateSent
             java.sql.Date dateSent = new java.sql.Date(new java.util.Date().getTime());
 
-            //Add message to Messages
+           //Insert message
             String insert = "INSERT INTO Messages(msgID, sender, subject, content, dateSent) VALUES(?, ?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(insert);
-            preparedStatement.setLong(1, totalMessages);
-            preparedStatement.setLong(2, sender);
+
+            preparedStatement.setInt(1, (totalMessages + 1));
+            preparedStatement.setInt(2, sender);
             preparedStatement.setString(3, subj);
             preparedStatement.setString(4, body);
             preparedStatement.setDate(5, dateSent);
@@ -499,12 +502,12 @@ public class Facespace {
 
             /* Loop through list of group members to make inserts in Recipients for each recipient*/
             for(int i = 0; i < groupMembers.size(); i++){
-
-                insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
-                preparedStatement = connection.prepareStatement(insert);
-                preparedStatement.setLong(1, totalMessages);
-                preparedStatement.setLong(2, groupMembers.get(i));
-                preparedStatement.close();
+              
+            insert = "INSERT INTO Recipients(msgID, recipient) VALUES(?, ?)";
+            preparedStatement = connection.prepareStatement(insert);
+            preparedStatement.setInt(1, (totalMessages + 1));
+            preparedStatement.setInt(2, groupMembers.get(i));
+			preparedStatement.executeUpdate();
             }
 
             System.out.println("Message to group sent successfully!");
@@ -526,9 +529,10 @@ public class Facespace {
         try {
             //Generate a list of all messages
             query = "SELECT Messages.sender, Messages.subject, Messages.content, Messages.dateSent, Messages.msgID FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ?";
-			preparedStatement = connection.prepareStatement(query);
-			preparedStatement.setInt(1, user);
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, user);
             resultSet = preparedStatement.executeQuery();
+			
             //Save those messages in a list
             ArrayList<DBMessage> messageList = new ArrayList<DBMessage>();
             int from;
@@ -539,7 +543,6 @@ public class Facespace {
             DBMessage m;
 			
             while(resultSet.next()){
-				System.out.println("Message Found");
                 from = resultSet.getInt("sender");
                 s = resultSet.getString("subject");
                 b = resultSet.getString("content");
@@ -560,13 +563,13 @@ public class Facespace {
 				preparedStatement = connection.prepareStatement(query);
 				preparedStatement.setInt(1, m.senderID);
 				resultSet = preparedStatement.executeQuery();
-				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
+				resultSet.next();
+				String fullname = resultSet.getString("fname") + " " + resultSet.getString("mname") +  " " + resultSet.getString("lname");
 				//print everything out
 				System.out.println("From: " + fullname);
 				System.out.println("Subject: " + m.subject);
 				System.out.println("Sent: " + m.dateSent.toString());
-				System.out.println("Body: ");
-				System.out.println(m.body);
+				System.out.println("\n" + m.body);
 				System.out.println("---------------------------\n");
 				preparedStatement.close();
 			}
@@ -581,8 +584,9 @@ public class Facespace {
 		try {
             //Generate a list of all messages 
             query = "SELECT * FROM Messages INNER JOIN Recipients ON Messages.msgID = Recipients.msgID WHERE recipient = ? AND CAST(dateSent AS TIMESTAMP) > (SELECT loggedIn FROM Users WHERE userID = ?)";
-            preparedStatement = connection.prepareStatement(query);
+			preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, user);
+			preparedStatement.setInt(2, user);
             resultSet = preparedStatement.executeQuery();
 			
             //Save those messages in a list
@@ -614,13 +618,13 @@ public class Facespace {
 				preparedStatement = connection.prepareStatement(query);
 				preparedStatement.setInt(1, m.senderID);
 				resultSet = preparedStatement.executeQuery();
-				String fullname = resultSet.getString("fname") + resultSet.getString("mname") + resultSet.getString("lname");
+				resultSet.next();
+				String fullname = resultSet.getString("fname") + " " + resultSet.getString("mname") +  " " + resultSet.getString("lname");
 				//print everything out
 				System.out.println("From: " + fullname);
 				System.out.println("Subject: " + m.subject);
 				System.out.println("Sent: " + m.dateSent.toString());
-				System.out.println("Body: ");
-				System.out.println(m.body);
+				System.out.println("\n" + m.body);
 				System.out.println("---------------------------\n");
 				preparedStatement.close();
 			}
@@ -628,14 +632,7 @@ public class Facespace {
         catch (Exception e) {
             System.out.println("Error finding messages: "
                     + e.toString());
-        } finally {
-            try {
-                statement.close();
-                preparedStatement.close();
-            } catch (Exception e) {
-                System.out.println("Cannot close statement: " + e.toString());
-            }
-        }
+        } 
     }
 
     /*
