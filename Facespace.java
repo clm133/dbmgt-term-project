@@ -181,7 +181,9 @@ public class Facespace {
                     fs.topMessagers(k, x);
                     break;
                 case 14:
-                    dropUser();
+                    System.out.println("Enter userID: ");
+                    uid = input.nextInt();
+                    fs.dropUser(uid);
                     break;
                 case 0:
                     quit = 1;
@@ -720,7 +722,52 @@ public class Facespace {
 
     }
 
-    public static void dropUser() {
+    public void dropUser(int userID) {
+
+        try {
+
+            query = "DELETE FROM Friendships WHERE (Friend1 = " + userID + " OR Friend2 = " + userID + ") ";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate(query);
+
+            query = "DELETE FROM Belongs_To WHERE member = " + userID + "";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate(query);
+
+            query = "UPDATE Recipients SET recipient = NULL WHERE recipient = " + userID + "";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+
+            statement = connection.createStatement();
+            query = "ALTER TABLE Messages DROP CONSTRAINT Messaages_Sender_FK_Users";
+            statement.executeQuery(query);
+
+            query = "DELETE FROM Users WHERE userID = " + userID + "";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate(query);
+
+            query = "UPDATE Messages SET sender = NULL WHERE sender = " + userID + "";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+
+            statement = connection.createStatement();
+            query = "ALTER TABLE Messages ADD CONSTRAINT Messaages_Sender_FK_Users FOREIGN KEY (sender) REFERENCES Users(userID)";
+            statement.executeQuery(query);
+            
+            query = "DELETE FROM Recipients WHERE (msgID IN (SELECT msgID FROM (Messages NATURAL JOIN Recipients) WHERE (sender is NULL AND recipient is NULL)) AND recipient is NULL) ";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+            query = "DELETE FROM Messages WHERE msgID IN (SELECT msgID FROM (Messages NATURAL JOIN Recipients) WHERE (sender is NULL AND recipient is NULL))";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+
+            System.out.println("User drop sucessfull!");
+
+        } catch (SQLException e) {
+            System.out.println("Error:" + e);
+        } finally {
+            closeResources();
+        }
 
     }
 
