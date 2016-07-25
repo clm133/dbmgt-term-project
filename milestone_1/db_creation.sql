@@ -66,8 +66,28 @@
  	CONSTRAINT Recipients_FK_Users FOREIGN KEY (recipient) REFERENCES Users(userID)
   );
 
---Check Group Membership Limit 
+ --A trigger for deleting users from groups
+	CREATE OR REPLACE TRIGGER delete_from_groups
+	BEFORE DELETE
+	   ON Users
+	   FOR EACH ROW
 
+	BEGIN
+	   --update group membership
+	   UPDATE 
+		(SELECT Groups.memCount AS mc
+		FROM Groups INNER JOIN Belongs_To ON Groups.groupID = Belongs_To.groupID
+		WHERE Belongs_To.member = :OLD.userID) up
+		SET up.mc = (up.mc - 1);
+	   
+	   --Delete User from Belongs_To table
+	   DELETE FROM Belongs_To
+	   WHERE member = :OLD.userID;
+	  
+	END;
+	/
+	
+--Check Group Membership Limit 
 --A trigger to enforce group membership is kept within limit
   CREATE OR REPLACE TRIGGER check_group_limit
 	BEFORE INSERT
@@ -104,37 +124,3 @@
 		/
 
 	commit;
-  
- 
---A trigger for deleting users from groups
-	CREATE OR REPLACE TRIGGER delete_from_groups
-	   BEFORE DELETE
-	   ON Users
-	   REFERENCING NEW AS EX_USER
-	   FOR EACH ROW
-
-	DECLARE
-	   -- variable declarations
-	   userToDelete INTEGER;
-
-	BEGIN
-	   -- trigger code
-	   
-	   userToDelete := :EX_USER.userID;
-	   
-	   --update group membership
-	   UPDATE 
-		(SELECT Groups.memCount AS mc
-		FROM Groups INNER JOIN Belongs_To ON Groups.groupID = Belongs_To.groupID
-		WHERE Belongs_To.member = userToDelete) up
-		SET up.mc -= 1;
-	   
-	   
-	   --Delete User from Belongs_To table
-	   DELETE FROM Belongs_To
-	   WHERE member = userToDelete;
-	   
-	   
-
-	END;
-	/
