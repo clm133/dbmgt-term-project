@@ -7,6 +7,7 @@
  DROP TRIGGER check_group_limit;
  DROP TRIGGER UPDATE_MEM_COUNT;
  DROP TRIGGER delete_from_groups;
+ DROP TRIGGER RECIPIENT_UPDATE;
  
  
   CREATE TABLE Users
@@ -120,6 +121,17 @@
 
 			UPDATE GROUPS SET MEMCOUNT= v_count + 1
 			WHERE GROUPID = :NEW_ROW.groupID;
+		END;
+		/
+		--trigger for deleting null recpients before message delete
+		CREATE OR REPLACE TRIGGER RECIPIENT_UPDATE
+		BEFORE DELETE
+		ON Messages
+		FOR EACH ROW
+
+		BEGIN
+		DELETE FROM Recipients
+        	WHERE msgID = :OLD.msgID;
 		END;
 		/
 
