@@ -722,6 +722,7 @@ public class Facespace {
 
     }
 
+		//still needs a bit of tweaking
     public void dropUser(int userID) {
 
         try {
