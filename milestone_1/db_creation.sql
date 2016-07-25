@@ -4,6 +4,9 @@
  DROP TABLE Messages CASCADE CONSTRAINTS;
  DROP TABLE Belongs_To CASCADE CONSTRAINTS;
  DROP TABLE Recipients CASCADE CONSTRAINTS;
+ DROP TRIGGER check_group_limit;
+ DROP TRIGGER UPDATE_MEM_COUNT;
+ DROP TRIGGER delete_from_groups;
  
  
   CREATE TABLE Users
@@ -103,3 +106,35 @@
 	commit;
   
  
+--A trigger for deleting users from groups
+	CREATE OR REPLACE TRIGGER delete_from_groups
+	   BEFORE DELETE
+	   ON Users
+	   REFERENCING NEW AS EX_USER
+	   FOR EACH ROW
+
+	DECLARE
+	   -- variable declarations
+	   userToDelete INTEGER;
+
+	BEGIN
+	   -- trigger code
+	   
+	   userToDelete := :EX_USER.userID;
+	   
+	   --update group membership
+	   UPDATE 
+		(SELECT Groups.memCount AS mc
+		FROM Groups INNER JOIN Belongs_To ON Groups.groupID = Belongs_To.groupID
+		WHERE Belongs_To.member = userToDelete) up
+		SET up.mc -= 1;
+	   
+	   
+	   --Delete User from Belongs_To table
+	   DELETE FROM Belongs_To
+	   WHERE member = userToDelete;
+	   
+	   
+
+	END;
+	/
