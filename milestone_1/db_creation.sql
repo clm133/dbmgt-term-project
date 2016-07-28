@@ -123,15 +123,15 @@
 			WHERE GROUPID = :NEW_ROW.groupID;
 		END;
 		/
-		--trigger for deleting null recpients before message delete
+		--trigger for deleting recpients before user delete
 		CREATE OR REPLACE TRIGGER RECIPIENT_UPDATE
 		BEFORE DELETE
-		ON Messages
+		ON Users
 		FOR EACH ROW
 
 		BEGIN
 		DELETE FROM Recipients
-        	WHERE msgID = :OLD.msgID;
+        	WHERE recipient = :OLD.userID;
 		END;
 		/
 
