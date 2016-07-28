@@ -722,8 +722,7 @@ public class Facespace {
 
     }
 
-		//still needs a bit of tweaking
-    public void dropUser(int userID) {
+public void dropUser(int userID) {
 
         try {
 
@@ -734,10 +733,6 @@ public class Facespace {
             query = "DELETE FROM Belongs_To WHERE member = " + userID + "";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.executeUpdate(query);
-
-            query = "UPDATE Recipients SET recipient = NULL WHERE recipient = " + userID + "";
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.executeUpdate();
 
             statement = connection.createStatement();
             query = "ALTER TABLE Messages DROP CONSTRAINT Messaages_Sender_FK_Users";
@@ -755,10 +750,7 @@ public class Facespace {
             query = "ALTER TABLE Messages ADD CONSTRAINT Messaages_Sender_FK_Users FOREIGN KEY (sender) REFERENCES Users(userID)";
             statement.executeQuery(query);
             
-            query = "DELETE FROM Recipients WHERE (msgID IN (SELECT msgID FROM (Messages NATURAL JOIN Recipients) WHERE (sender is NULL AND recipient is NULL)) AND recipient is NULL) ";
-            preparedStatement = connection.prepareStatement(query);
-            preparedStatement.executeUpdate();
-            query = "DELETE FROM Messages WHERE msgID IN (SELECT msgID FROM (Messages NATURAL JOIN Recipients) WHERE (sender is NULL AND recipient is NULL))";
+            query = "DELETE FROM Messages WHERE msgID NOT IN (SELECT msgID FROM Recipients) AND sender is NULL";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.executeUpdate();
 
