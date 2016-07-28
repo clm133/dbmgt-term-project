@@ -85,7 +85,7 @@ public class Facespace {
             input.nextLine();
             switch (choice) {
                 case 1:
-                    System.out.println("Enter the users full name (First MI Last): ");
+                    System.out.println("Enter the users full name (FIRST MIDDLE LAST): ");
                     String user = input.nextLine();
                     System.out.println("Enter the users email: ");
                     String email = input.nextLine();
@@ -108,7 +108,7 @@ public class Facespace {
                     fs.establishFriendship(friend1, friend2);
                     break;
                 case 4:
-                    System.out.println("Enter the user name (First MI Last): ");
+                    System.out.println("Enter the user name (FIRST MIDDLE LAST): ");
                     String userfriend = input.nextLine();
                     fs.displayFriends(userfriend);
                     break;
