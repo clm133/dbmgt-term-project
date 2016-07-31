@@ -1,0 +1,6 @@
+1. searchForUser function doesn’t work.
+2. Pending/ Established friendship shouldn’t be the same in displayFriends function
+3. Shouldn’t allow user create group with 0 group limit
+4. addToGroup function doesn’t work
+
+This is currently what I see and you should modified, but not limited to these.
