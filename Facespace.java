@@ -298,11 +298,11 @@ public class Facespace {
                 int userID = resultSet.getInt(1);
 
                 System.out.print("\n");
-                System.out.println("FRIENDSHIPS:");
+                System.out.println("PENDING FRIENDSHIPS:");
                 System.out.print("---------------------------\n");
 
                 String column;
-                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend1 FROM Friendships WHERE friend2 = " + userID + ")";
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend1 FROM Friendships WHERE friend2 = " + userID + " AND status = 0)";
                 resultSet = statement.executeQuery(select);
 
                 while (resultSet.next()) {
@@ -314,7 +314,37 @@ public class Facespace {
                     System.out.print(column);
                 }
 
-                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend2 FROM Friendships WHERE friend1 = " + userID + ")";
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend2 FROM Friendships WHERE friend1 = " + userID + "AND status = 0)";
+                resultSet = statement.executeQuery(select);
+
+                while (resultSet.next()) {
+                    column = resultSet.getString("fname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("mname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("lname");
+                    System.out.print(column);
+                    System.out.print("\n");
+                }
+                
+                System.out.print("\n");
+
+                System.out.println("ESTABLISHED FRIENDSHIPS:");
+                System.out.print("---------------------------\n");
+
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend1 FROM Friendships WHERE friend2 = " + userID + " AND status = 1)";
+                resultSet = statement.executeQuery(select);
+
+                while (resultSet.next()) {
+                    column = resultSet.getString("fname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("mname");
+                    System.out.print(column + " ");
+                    column = resultSet.getString("lname");
+                    System.out.print(column);
+                }
+
+                select = "SELECT fname, mname, lname FROM Users WHERE userID IN (SELECT friend2 FROM Friendships WHERE friend1 = " + userID + "AND status = 1)";
                 resultSet = statement.executeQuery(select);
 
                 while (resultSet.next()) {
