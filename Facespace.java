@@ -392,7 +392,7 @@ public class Facespace {
                 resultSet.next();
                 long maxGroups = resultSet.getLong(1);
 
-                String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?, ?)";
+                String insert = "INSERT INTO Groups(groupID, name, memLimit, memCount, description) VALUES(?, ?, ?, ?, ?)";
                 preparedStatement = connection.prepareStatement(insert);
 
                 preparedStatement.setLong(1, (maxGroups + 1));
