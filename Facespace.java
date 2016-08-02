@@ -345,21 +345,25 @@ public class Facespace {
     public void createGroup(String name, String description, String limit) {
 
         try {
-            statement = connection.createStatement();
-            query = "SELECT MAX(groupID) FROM Groups";
-            resultSet = statement.executeQuery(query);
-            resultSet.next();
-            long maxGroups = resultSet.getLong(1);
+            if (Integer.parseInt(limit) <= 0) {
+                System.out.println("Member limit must be greater than 0!");
+            } else {
+                statement = connection.createStatement();
+                query = "SELECT MAX(groupID) FROM Groups";
+                resultSet = statement.executeQuery(query);
+                resultSet.next();
+                long maxGroups = resultSet.getLong(1);
 
-            String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?)";
-            preparedStatement = connection.prepareStatement(insert);
+                String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?)";
+                preparedStatement = connection.prepareStatement(insert);
 
-            preparedStatement.setLong(1, (maxGroups + 1));
-            preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, Integer.parseInt(limit));
-            preparedStatement.setString(4, description);
-            preparedStatement.executeUpdate();
-            System.out.println("Group successfully created!");
+                preparedStatement.setLong(1, (maxGroups + 1));
+                preparedStatement.setString(2, name);
+                preparedStatement.setInt(3, Integer.parseInt(limit));
+                preparedStatement.setString(4, description);
+                preparedStatement.executeUpdate();
+                System.out.println("Group successfully created!");
+            }
 
         } catch (Exception e) {
             System.out.println("Error adding group to database: "
