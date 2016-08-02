@@ -71,13 +71,14 @@ public class Facespace {
             System.out.println("12. threeDegrees");
             System.out.println("13. topMessagers");
             System.out.println("14. dropUser");
+            System.out.println("15. runAutomatedTests");
             System.out.println("0. QUIT");
             System.out.println("\nWhat is your choice?: ");
 
             int choice = input.nextInt();
             Facespace fs = new Facespace();
 
-            while (choice < 0 || choice > 14) {
+            while (choice < 0 || choice > 15) {
                 System.out.println("Please enter a valid choice!");
                 choice = input.nextInt();
             }
@@ -185,6 +186,10 @@ public class Facespace {
                     uid = input.nextInt();
                     fs.dropUser(uid);
                     break;
+                case 15:
+                    System.out.println("Running automated tests...");
+                    fs.automatic();
+                    break;
                 case 0:
                     quit = 1;
                     break;
@@ -195,7 +200,8 @@ public class Facespace {
         }
     }
 
-    public void createUser(String name, String email, String dob) {
+    public int createUser(String name, String email, String dob) {
+        int retId = -1;
 
         try {
             String[] names = name.split(" ");
@@ -224,6 +230,7 @@ public class Facespace {
             preparedStatement.setDate(7, login);
             preparedStatement.executeUpdate();
             System.out.println("User successfully created!");
+            retId = maxUsers + 1;
         } catch (Exception e) {
             System.out.println("Error adding user to database: "
                     + e.toString());
@@ -235,6 +242,8 @@ public class Facespace {
                 System.out.println("Cannot close statement: " + e.toString());
             }
         }
+
+        return retId;
     }
 
     public void initiateFriendship(int user1, int user2) {
@@ -341,8 +350,8 @@ public class Facespace {
 
     }
 
-    public void createGroup(String name, String description, String limit) {
-
+    public int createGroup(String name, String description, String limit) {
+        int retId = -1;
         try {
             if (Integer.parseInt(limit) <= 0) {
                 System.out.println("Member limit must be greater than 0!");
@@ -362,6 +371,7 @@ public class Facespace {
                 preparedStatement.setString(4, description);
                 preparedStatement.executeUpdate();
                 System.out.println("Group successfully created!");
+                retId = maxGroups + 1;
             }
 
         } catch (Exception e) {
@@ -375,6 +385,8 @@ public class Facespace {
                 System.out.println("Cannot close statement: " + e.toString());
             }
         }
+
+        return retId;
 
     }
 
@@ -765,6 +777,65 @@ public void dropUser(int userID) {
             closeResources();
         }
 
+    }
+
+    public void automatic() {
+        List<Integer> ids = new ArrayList<Integer>();
+        for(int i=0; i<4; i++) {
+            String name = "autof" + i + " autom" + i + " autol" + i;
+            String email = "auto" + i + "@pitt.edu";
+            String dob = "1990-01-01";
+            int id = createUser(name, email, dob);
+            if(id < 0) {
+                System.out.println("User creation failed so cancelling automatic test");
+                return;
+            }
+
+            ids.add(id);
+        }
+
+        for(int i=0; i<ids.size() - 1; i++) {
+            initiateFriendship(ids.get(i), ids.get(i + 1));
+            establishFriendship(ids.get(i), ids.get(i + 1));
+        }
+
+        for(int i=0; i<ids.size(); i++) {
+            String name = "autof" + i + " autom" + i + " autol" + i;
+            displayFriends(name);
+        }
+
+        String group = "autogroup";
+        int group = createGroup(group, "automatically generated group", ids.size());
+        if(group < 0) {
+            System.out.println("Automatic testing failed exiting");
+            return;
+        }
+
+        for(Integer id : ids) {
+            addToGroup(group, id);
+        }
+
+        for(int i=0; i<ids.size() - 1; i++) {
+            sendMessageToUser("subject", "body", ids.get(i + 1), ids.get(i));
+        }
+
+        sendMessageToGroup("subject", "body", group, ids.get(0));
+
+        for(Integer id : ids) {
+            displayMessages(id);
+            displayNewMessages(id);
+        }
+
+        searchForUser("auto");
+        for(int i=1; i<ids.size();i++) {
+            threeDegrees(ids.get(0), ids.get(i));
+        }
+
+        topMessagers(10, 1);
+
+        for(Integer id : ids) {
+            dropUser(id);
+        }
     }
 
     private void closeResources() {
