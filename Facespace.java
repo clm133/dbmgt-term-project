@@ -290,8 +290,7 @@ public class Facespace {
             statement = connection.createStatement();
             String select = "SELECT userID FROM Users WHERE fname = '" + names[0] + "' AND mname = '" + names[1] + "' AND lname = '" + names[2] + "'";
             resultSet = statement.executeQuery(select);
-            resultSet.next();
-            if (resultSet.isAfterLast()) {
+            if (!resultSet.next()) {
                 System.out.println("User does not exist!");
             } else {
 
@@ -381,7 +380,7 @@ public class Facespace {
 
     public void addToGroup(String group, int user) {
         try {
-            query = "SELECT COUNT(DISTINCT *) FROM BELONGS_TO WHERE GROUPID = (SELECT GROUPID FROM GROUPS WHERE NAME = ? )";
+            query = "SELECT COUNT(DISTINCT GROUPID) FROM BELONGS_TO WHERE GROUPID = (SELECT GROUPID FROM GROUPS WHERE NAME = ? )";
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, group);
             resultSet = preparedStatement.executeQuery();
@@ -666,7 +665,7 @@ public class Facespace {
             }
             builder.append(" ORDER BY FNAME, MNAME, LNAME ASC");
             preparedStatement = connection.prepareStatement(builder.toString());
-            int ind = 0;
+            int ind = 1;
             for(int i=0; i<keys.length; i++) {
                 preparedStatement.setString(ind++, keys[i]);
                 preparedStatement.setString(ind++, keys[i]);
