@@ -120,7 +120,7 @@ public class Facespace {
                     System.out.println("Enter the group description: ");
                     String description = input.nextLine();
                     System.out.println("Enter the group membership limit: ");
-                    String limit = input.nextLine();
+                    int limit = Integer.parseInt(input.nextLine());
                     fs.createGroup(group, description, limit);
                     break;
                 case 6:
@@ -381,10 +381,10 @@ public class Facespace {
 
     }
 
-    public int createGroup(String name, String description, String limit) {
+    public int createGroup(String name, String description, int limit) {
         int retId = -1;
         try {
-            if (Integer.parseInt(limit) <= 0) {
+            if (limit <= 0) {
                 System.out.println("Member limit must be greater than 0!");
             } else {
                 statement = connection.createStatement();
@@ -393,13 +393,14 @@ public class Facespace {
                 resultSet.next();
                 int maxGroups = resultSet.getInt(1);
 
-                String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?)";
+                String insert = "INSERT INTO Groups(groupID, name, memLimit, memCount, description) VALUES(?, ?, ?, ?, ?)";
                 preparedStatement = connection.prepareStatement(insert);
 
                 preparedStatement.setInt(1, (maxGroups + 1));
                 preparedStatement.setString(2, name);
-                preparedStatement.setInt(3, Integer.parseInt(limit));
-                preparedStatement.setString(4, description);
+                preparedStatement.setInt(3,limit);
+                preparedStatement.setInt(4, 0);
+                preparedStatement.setString(5, description);
                 preparedStatement.executeUpdate();
                 System.out.println("Group successfully created!");
                 retId = maxGroups + 1;
