@@ -34,7 +34,7 @@
   CREATE TABLE Groups
   (
  	groupID number PRIMARY KEY,
- 	name varchar2(32),
+ 	name varchar2(32) UNIQUE,
  	memLimit INTEGER,
  	memCount INTEGER,
  	description varchar2(100) --I set this to the same number of characters a message is constrained to

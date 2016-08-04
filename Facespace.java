@@ -3,6 +3,7 @@ import java.text.ParseException;
 import java.util.Scanner;
 import java.util.Date;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Facespace {
 
@@ -210,7 +211,7 @@ public class Facespace {
             query = "SELECT MAX(userID) FROM Users";
             resultSet = statement.executeQuery(query);
             resultSet.next();
-            long maxUsers = resultSet.getLong(1);
+            int maxUsers = resultSet.getInt(1);
 
             java.text.SimpleDateFormat df = new java.text.SimpleDateFormat("yyyy-MM-dd");
             java.sql.Date bday = new java.sql.Date(df.parse(dob).getTime());
@@ -221,7 +222,7 @@ public class Facespace {
             String insert = "INSERT INTO Users(userID, fname, mname, lname, email, DOB, loggedIn) VALUES(?, ?, ?, ?, ?, ?, ?)";
             preparedStatement = connection.prepareStatement(insert);
 
-            preparedStatement.setLong(1, (maxUsers + 1));
+            preparedStatement.setInt(1, (maxUsers + 1));
             preparedStatement.setString(2, names[0]);
             preparedStatement.setString(3, names[1]);
             preparedStatement.setString(4, names[2]);
@@ -390,12 +391,12 @@ public class Facespace {
                 query = "SELECT MAX(groupID) FROM Groups";
                 resultSet = statement.executeQuery(query);
                 resultSet.next();
-                long maxGroups = resultSet.getLong(1);
+                int maxGroups = resultSet.getInt(1);
 
                 String insert = "INSERT INTO Groups(groupID, name, memLimit, description) VALUES(?, ?, ?, ?)";
                 preparedStatement = connection.prepareStatement(insert);
 
-                preparedStatement.setLong(1, (maxGroups + 1));
+                preparedStatement.setInt(1, (maxGroups + 1));
                 preparedStatement.setString(2, name);
                 preparedStatement.setInt(3, Integer.parseInt(limit));
                 preparedStatement.setString(4, description);
@@ -449,9 +450,9 @@ public class Facespace {
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, user);
             preparedStatement.setString(2, group);
-            boolean success = preparedStatement.execute();
+            int rows = preparedStatement.executeUpdate();
             connection.commit();
-            System.out.println(success? "The user was added to the group" : "There was an error when adding the user to the group");
+            System.out.println(rows + " rows were added to the database");
 
         } catch(Exception e) {
             System.out.println("Error adding to group: " + e.toString());
@@ -745,19 +746,37 @@ public class Facespace {
         }
 	}
 
+    public boolean delGroup(int groupId) {
+        boolean success = false;
+        try {
+            query = "DELETE FROM GROUPS WHERE GROUPID = ?";
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, groupId);
+            int count = preparedStatement.executeUpdate();
+            System.out.println(count + " rows deleted");
+            success = count > 0;
+        } catch(Exception e) {
+            System.out.println("Could not drop group, exception: " + e.toString());
+        } finally {
+            closeResources();
+        }
+
+        return success;
+    }
+
     /*
      * Display the top k who have sent the most messages in the past x months
      */
     public void topMessagers(int k, int x) {
         try {
-            query = "SELECT USERID, FNAME, MNAME, LNAME, COUNT(USERID) MSGCOUNT FROM USERS T1 JOIN MESSAGES T2 ON T1.USERID = T2.SENDER WHERE T2.DATESENT >= SYSDATE - INTERVAL ? MONTH GROUP BY USERID, FNAME, MNAME, LNAME ORDER BY MSGCOUNT DESC";
+            query = "SELECT USERID, FNAME, MNAME, LNAME, COUNT(USERID) MSGCOUNT FROM USERS T1 JOIN MESSAGES T2 ON T1.USERID = T2.SENDER WHERE T2.DATESENT >= SYSDATE - NUMTOYMINTERVAL(?, 'MONTH') GROUP BY USERID, FNAME, MNAME, LNAME ORDER BY MSGCOUNT DESC";
             preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, Integer.toString(x));
+            preparedStatement.setInt(1, x);
             resultSet = preparedStatement.executeQuery();
             int count = 0;
             System.out.println("FNAME\tMNAME\tLNAME\tMSGCOUNT");
             while(resultSet.next() && count++ < k) {
-                System.out.println(resultSet.getString(1) + "\t" + resultSet.getString(2) + "\t" + resultSet.getString(3) + "\t" + resultSet.getInt(4));
+                System.out.println(resultSet.getString(2) + "\t" + resultSet.getString(3) + "\t" + resultSet.getString(4) + "\t" + resultSet.getInt(5));
             }
         } catch(Exception e) {
             System.out.println("There was an error getting the top messengers: " + e.toString());
@@ -811,61 +830,93 @@ public void dropUser(int userID) {
 
     public void automatic() {
         List<Integer> ids = new ArrayList<Integer>();
+        System.out.println("Creating new users");
         for(int i=0; i<4; i++) {
             String name = "autof" + i + " autom" + i + " autol" + i;
             String email = "auto" + i + "@pitt.edu";
             String dob = "1990-01-01";
+            System.out.println("Creating user(" + name + ", " + email + ", dob");
             int id = createUser(name, email, dob);
             if(id < 0) {
                 System.out.println("User creation failed so cancelling automatic test");
                 return;
             }
+            System.out.println("User created with id of " + Integer.toString(id));
 
             ids.add(id);
         }
 
+        System.out.println("Creating friendships");
         for(int i=0; i<ids.size() - 1; i++) {
+            System.out.println("Init friendship bet " + ids.get(i) + " and " + ids.get(i + 1));
             initiateFriendship(ids.get(i), ids.get(i + 1));
+            System.out.println("Establish friendship bet " + ids.get(i) + " and " + ids.get(i + 1));
             establishFriendship(ids.get(i), ids.get(i + 1));
         }
+        System.out.println("All new friendships created");
 
+        System.out.println("Displaying friends for each new user");
         for(int i=0; i<ids.size(); i++) {
             String name = "autof" + i + " autom" + i + " autol" + i;
+            System.out.println("Friends of " + name);
             displayFriends(name);
         }
+        System.out.println("Done displaying friends");
 
-        String group = "autogroup";
-        int group = createGroup(group, "automatically generated group", ids.size());
+        String groupStr = "autogroup";
+        System.out.println("Creating new group: " + groupStr);
+        int group = createGroup(groupStr, "automatically generated group", Integer.toString(ids.size()));
         if(group < 0) {
             System.out.println("Automatic testing failed exiting");
             return;
         }
 
+        System.out.println("Group created");
+        System.out.println("Adding new users to group");
         for(Integer id : ids) {
-            addToGroup(group, id);
+            System.out.println("Adding user " + id + " to " + groupStr);
+            addToGroup(groupStr, id);
         }
-
+        System.out.println("All new users added");
+        System.out.println("Sending new messages");
         for(int i=0; i<ids.size() - 1; i++) {
+            System.out.println("Sending message from " + ids.get(i) + " to " + ids.get(i + 1));
             sendMessageToUser("subject", "body", ids.get(i + 1), ids.get(i));
         }
+        System.out.println("Sending message to group " + groupStr + " with id " + group + " from  user " + ids.get(0));
 
         sendMessageToGroup("subject", "body", group, ids.get(0));
 
+        System.out.println("All messages sent");
+        System.out.println("Displaying all messages");
         for(Integer id : ids) {
+            System.out.println("Displaying messsages for user " + id);
             displayMessages(id);
+            System.out.println("Displaying new messages for user " + id);
             displayNewMessages(id);
         }
+        System.out.println("All messages displayed");
 
+        System.out.println("Searching for user with searchkey: auto");
         searchForUser("auto");
+        System.out.println("Finding 3 degrees");
         for(int i=1; i<ids.size();i++) {
+            System.out.println("Between user " + ids.get(0) + " and " +ids.get(i));
             threeDegrees(ids.get(0), ids.get(i));
         }
 
+        System.out.println("Getting top 10 messagers for the past 1 month");
         topMessagers(10, 1);
 
+        System.out.println("Dropping new users");
         for(Integer id : ids) {
+            System.out.println("Dropping user " + id);
             dropUser(id);
         }
+        
+        System.out.println("Dropping new group");
+        delGroup(group);
+        System.out.println("Testing completed");
     }
 
     private void closeResources() {
